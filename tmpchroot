@@ -1,0 +1,152 @@
+#!/bin/bash
+
+device=/dev/sda6
+maint=/mnt/btrfs/maint
+envdir=/mnt/btrfs/chroot
+
+updateVariables() {
+    newROOTname=ROOT-chroot-$envname
+    newHOMEname=HOME-chroot-$envname
+    newROOT=$envdir/$envname
+}
+
+bindmounts=(/var/portage/distfiles/ /var/portage/packages/ \
+    /var/tmp/ccache /var/tmp/portage /var/tmp/portage_notmpfs/)
+
+mountbinds() {
+    for i in ${bindmounts[@]}; do
+        mount --bind "$i" "$newROOT/$i"
+    done
+}
+
+umountbinds() {
+    for i in $(seq $((${#bindmounts[@]} - 1)) -1 0); do
+        umount "$newROOT/${bindmounts[$i]}"
+    done
+}
+
+createSnapshots() {
+    mount $maint
+    btrfs sub snap $maint/ROOT $maint/$newROOTname
+    btrfs sub snap $maint/HOME $maint/$newHOMEname
+    umount $maint
+
+    mkdir -p $newROOT
+}
+
+buildUp() {
+    mount -o subvol=$newROOTname $device $newROOT
+    mount -o subvol=$newHOMEname $device $newROOT/home
+
+    mountbinds
+}
+
+showTime() {
+    systemd-nspawn --link-journal=no -D $newROOT
+    /usr/local/bin/reset-nonblock
+}
+
+tearDown() {
+    if grep -q "$newROOT" /etc/mtab; then
+        umountbinds
+        umount $newROOT/home $newROOT
+    fi
+}
+
+removeSnapshots() {
+    if [ "$_yes" = "42" ]; then
+        remove="yes"
+    else
+        read -p "Remove Environment \"$envname\"? " remove
+    fi
+
+    if [ "$remove" != "yes" ]; then
+        echo "Environment \"$envname\" will NOT be deleted."
+    else
+        rmdir $newROOT
+
+        mount $maint
+        btrfs sub del $maint/$newROOTname $maint/$newHOMEname
+        umount $maint
+    fi
+}
+
+# --- Main Routine ---
+
+if [ -z "$1" ]; then
+    envname=$(date +%s%N)
+    updateVariables
+    createSnapshots
+    buildUp
+    showTime
+    tearDown
+    removeSnapshots
+elif [ "$1" = "list" ]; then
+    if [[ -d "$envdir" && -n $(ls $envdir) ]]; then
+        ls -1 $envdir
+    else
+        echo "No environments found."
+    fi
+elif [ "$1" = "create" ]; then
+    if [ -z "$2" ]; then
+        echo "Please name an environment!"
+    else
+        envname="$2"
+        updateVariables
+        if [ -d "$newROOT" ]; then
+            echo "There already is an environment \"$2\"!"
+        else
+            createSnapshots
+            buildUp
+            showTime
+            tearDown
+            removeSnapshots
+        fi
+    fi
+elif [ "$1" = "continue" ]; then
+    if [ -z "$2" ]; then
+        echo "Please name an environment!"
+    else
+        envname="$2"
+        updateVariables
+        if [ ! -d "$newROOT" ]; then
+            echo "There is no environment \"$2\"!"
+        else
+            buildUp
+            showTime
+            tearDown
+            removeSnapshots
+        fi
+    fi
+elif [ "$1" = "delete" ]; then
+    if [ "$2" = "-y" ]; then
+        _yes=42
+        shift
+    fi
+
+    if [ -z "$2" ]; then
+        echo "Please name an environment!"
+    else
+        while [ -n "$2" ]; do
+            envname="$2"
+            updateVariables
+            if [ ! -d "$newROOT" ]; then
+                echo "There is no environment \"$2\"!"
+            else
+                tearDown
+                removeSnapshots
+            fi
+            shift
+        done
+    fi
+elif [ "$1" = "test" ]; then
+    envname=$(date +%s%N)
+    updateVariables
+    createSnapshots
+    mount -o subvol=$newROOTname $device $newROOT
+    mount -o subvol=$newHOMEname $device $newROOT/home
+    bindmount /usr/portage /var/portage/distfiles/ /var/portage/packages/
+    bindmount /var/tmp/ccache /var/tmp/portage
+else
+    echo "Unknown argument \"$1\"!"
+fi
