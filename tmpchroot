@@ -143,10 +143,7 @@ elif [ "$1" = "test" ]; then
     envname=$(date +%s%N)
     updateVariables
     createSnapshots
-    mount -o subvol=$newROOTname $device $newROOT
-    mount -o subvol=$newHOMEname $device $newROOT/home
-    bindmount /usr/portage /var/portage/distfiles/ /var/portage/packages/
-    bindmount /var/tmp/ccache /var/tmp/portage
+    buildUp
 else
     echo "Unknown argument \"$1\"!"
 fi
