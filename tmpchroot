@@ -42,7 +42,7 @@ buildUp() {
 }
 
 showTime() {
-    systemd-nspawn --link-journal=no -D $newROOT
+    systemd-nspawn --link-journal=no -D $newROOT "$@"
     deblock
 }
 
@@ -103,6 +103,10 @@ for i in $(seq 0 $((${#args} - 1))); do
             _yes=42
             unset args[$i]
             ;;
+        --)
+            unset args[$i]
+            break
+            ;;
         *)
             echo "Unknown argument \"${args[$i]}\"!"
             exit 1
@@ -116,7 +120,7 @@ case "$action" in
         updateVariables
         createSnapshots
         buildUp
-        showTime
+        showTime "${args[@]}"
         tearDown
         removeSnapshots
         ;;
@@ -137,7 +141,7 @@ case "$action" in
             else
                 createSnapshots
                 buildUp
-                showTime
+                showTime "${args[@]}"
                 tearDown
                 removeSnapshots
             fi
@@ -152,7 +156,7 @@ case "$action" in
                 echo "There is no environment \"$envname\"!"
             else
                 buildUp
-                showTime
+                showTime "${args[@]}"
                 tearDown
                 removeSnapshots
             fi
