@@ -1,8 +1,15 @@
 #!/bin/bash
 
-device=/dev/sda6
 maint=/mnt/btrfs/maint
 envdir=/mnt/btrfs/chroot
+
+# Comments to grep:
+# - \K is a look-behind, not included in result.
+# - (?=xxx) is a look-ahead, also not included.
+# To sum it up: I get the string inside the brackets, which wil be the device
+# path.
+device=$(btrfs dev stats "$maint" | head -n1 | \
+    grep -Po "\[\K.+(?=\])")
 
 updateVariables() {
     newROOTname=ROOT-chroot-$envname
