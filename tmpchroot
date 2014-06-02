@@ -35,7 +35,9 @@ umountbinds() {
 createSnapshots() {
     mount $maint
     btrfs sub snap $maint/ROOT $maint/$newROOTname
-    btrfs sub snap $maint/HOME $maint/$newHOMEname
+    if [ -d "$maint/HOME" ]; then
+        btrfs sub snap $maint/HOME $maint/$newHOMEname
+    fi
     umount $maint
 
     mkdir -p $newROOT
@@ -43,7 +45,9 @@ createSnapshots() {
 
 buildUp() {
     mount -o subvol=$newROOTname $device $newROOT
-    mount -o subvol=$newHOMEname $device $newROOT/home
+    if [ -d "$maint/HOME" ]; then
+        mount -o subvol=$newHOMEname $device $newROOT/home
+    fi
 
     mountbinds
 }
@@ -61,7 +65,10 @@ deblock() {
 tearDown() {
     if grep -q "$newROOT" /etc/mtab; then
         umountbinds
-        umount $newROOT/home $newROOT
+        if [ -d "$maint/HOME" ]; then
+            umount $newROOT/home
+        fi
+        umount $newROOT
     fi
 }
 
@@ -78,7 +85,10 @@ removeSnapshots() {
         rmdir $newROOT
 
         mount $maint
-        btrfs sub del $maint/$newROOTname $maint/$newHOMEname
+        btrfs sub del $maint/$newROOTname
+        if [ -d "$maint/HOME" ]; then
+            btrfs sub del $maint/$newHOMEname
+        fi
         umount $maint
     fi
 }
