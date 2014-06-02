@@ -50,7 +50,6 @@ buildUp() {
 
 showTime() {
     systemd-nspawn --link-journal=no -D $newROOT "$@"
-    deblock
 }
 
 deblock() {
@@ -59,6 +58,8 @@ deblock() {
 }
 
 tearDown() {
+    deblock
+
     if grep -q "$newROOT" /etc/mtab; then
         umountbinds
         umount $newROOT/home $newROOT
