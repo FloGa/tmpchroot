@@ -3,6 +3,9 @@
 maint=/mnt/btrfs/maint
 envdir=/mnt/btrfs/chroot
 
+subvolRoot=ROOT
+subvolHome=HOME
+
 # Comments to grep:
 # - \K is a look-behind, not included in result.
 # - (?=xxx) is a look-ahead, also not included.
@@ -12,8 +15,8 @@ device=$(btrfs dev stats "$maint" | head -n1 | \
     grep -Po "\[\K.+(?=\])")
 
 updateVariables() {
-    newROOTname=ROOT-chroot-$envname
-    newHOMEname=HOME-chroot-$envname
+    newROOTname=${subvolRoot}-chroot-$envname
+    newHOMEname=${subvolHome}-chroot-$envname
     newROOT=$envdir/$envname
 }
 
@@ -61,9 +64,16 @@ umountbinds() {
 
 createSnapshots() {
     mount $maint
-    btrfs sub snap $maint/ROOT $maint/$newROOTname
-    if [ -d "$maint/HOME" ]; then
-        btrfs sub snap $maint/HOME $maint/$newHOMEname
+
+    if [ ! -d $maint/$subvolRoot ]; then
+        echo "ERROR: \"$maint/$subvolRoot\" does not exist!"
+        umount $maint
+        exit 1
+    fi
+
+    btrfs sub snap $maint/$subvolRoot $maint/$newROOTname
+    if [ -d "$maint/$subvolHome" ]; then
+        btrfs sub snap $maint/$subvolHome $maint/$newHOMEname
     fi
     umount $maint
 
@@ -72,7 +82,7 @@ createSnapshots() {
 
 buildUp() {
     mount -o subvol=$newROOTname $device $newROOT
-    if [ -d "$maint/HOME" ]; then
+    if [ -d "$maint/$subvolHome" ]; then
         mount -o subvol=$newHOMEname $device $newROOT/home
     fi
 
@@ -89,7 +99,7 @@ tearDown() {
 
     if grep -q "$newROOT" /etc/mtab; then
         umountbinds
-        if [ -d "$maint/HOME" ]; then
+        if [ -d "$maint/$subvolHome" ]; then
             umount $newROOT/home
         fi
         umount $newROOT
@@ -143,6 +153,14 @@ for i in $(seq 0 $((${#args} - 1))); do
         -y)
             _yes=42
             unset args[$i]
+            ;;
+        --subvol-root)
+            subvolRoot="${args[$(($i + 1))]}"
+            unset args[$i] args[$(($i + 1))]
+            ;;
+        --subvol-home)
+            subvolHome="${args[$(($i + 1))]}"
+            unset args[$i] args[$(($i + 1))]
             ;;
         --)
             unset args[$i]
