@@ -17,8 +17,35 @@ updateVariables() {
     newROOT=$envdir/$envname
 }
 
-bindmounts=(/var/portage/distfiles/ /var/portage/packages/ \
-    /var/tmp/ccache /var/tmp/portage /var/tmp/portage_notmpfs/)
+prepare() {
+    updateVariables
+
+    if [ -x /usr/bin/systemd-nspawn ]; then
+        useNspawn
+    else
+        useChroot
+    fi
+}
+
+useChroot() {
+    bindmounts=(/var/portage/distfiles/ /var/portage/packages/ \
+        /var/tmp/ccache /var/tmp/portage /var/tmp/portage_notmpfs/ \
+        /proc /proc/sys /sys /dev /dev/pts /dev/shm /run /dev/console \
+        /proc/kmsg)
+
+    showTime() {
+        chroot $newROOT "$@"
+    }
+}
+
+useNspawn() {
+    bindmounts=(/var/portage/distfiles/ /var/portage/packages/ \
+        /var/tmp/ccache /var/tmp/portage /var/tmp/portage_notmpfs/)
+
+    showTime() {
+        systemd-nspawn --link-journal=no -D $newROOT "$@"
+    }
+}
 
 mountbinds() {
     for i in ${bindmounts[@]}; do
@@ -52,17 +79,14 @@ buildUp() {
     mountbinds
 }
 
-showTime() {
-    systemd-nspawn --link-journal=no -D $newROOT "$@"
-    deblock
-}
-
 deblock() {
     perl -e "use Fcntl qw(F_GETFL F_SETFL O_NONBLOCK); \
         fcntl(STDIN, F_SETFL, fcntl(STDIN, F_GETFL, 0) & ~O_NONBLOCK);"
 }
 
 tearDown() {
+    deblock
+
     if grep -q "$newROOT" /etc/mtab; then
         umountbinds
         if [ -d "$maint/HOME" ]; then
@@ -134,7 +158,7 @@ done
 case "$action" in
     "")
         envname=$(date +%s%N)
-        updateVariables
+        prepare
         createSnapshots
         buildUp
         showTime "${args[@]}"
@@ -152,7 +176,7 @@ case "$action" in
         if [ -z "$envname" ]; then
             echo "Please name an environment!"
         else
-            updateVariables
+            prepare
             if [ -d "$newROOT" ]; then
                 echo "There already is an environment \"$envname\"!"
             else
@@ -168,7 +192,7 @@ case "$action" in
         if [ -z "$envname" ]; then
             echo "Please name an environment!"
         else
-            updateVariables
+            prepare
             if [ ! -d "$newROOT" ]; then
                 echo "There is no environment \"$envname\"!"
             else
@@ -185,7 +209,7 @@ case "$action" in
         else
             for i in "${args[@]}"; do
                 envname="$i"
-                updateVariables
+                prepare
                 if [ ! -d "$newROOT" ]; then
                     echo "There is no environment \"$i\"!"
                 else
@@ -197,7 +221,7 @@ case "$action" in
         ;;
     test)
         envname=$(date +%s%N)
-        updateVariables
+        prepare
         createSnapshots
         buildUp
         ;;
