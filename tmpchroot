@@ -31,10 +31,22 @@ prepare() {
 }
 
 useChroot() {
-    bindmounts=(/var/portage/distfiles/ /var/portage/packages/ \
-        /var/tmp/ccache /var/tmp/portage /var/tmp/portage_notmpfs/ \
-        /proc /proc/sys /sys /dev /dev/pts /dev/shm /run /dev/console \
-        /proc/kmsg)
+    bindmounts=(
+    /dev
+    /dev/console
+    /dev/pts
+    /dev/shm
+    /proc
+    /proc/kmsg
+    /proc/sys
+    /run
+    /sys
+    /var/portage/distfiles
+    /var/portage/packages
+    /var/tmp/ccache
+    /var/tmp/portage
+    /var/tmp/portage_notmpfs
+    )
 
     showTime() {
         chroot $newROOT "$@"
@@ -42,8 +54,13 @@ useChroot() {
 }
 
 useNspawn() {
-    bindmounts=(/var/portage/distfiles/ /var/portage/packages/ \
-        /var/tmp/ccache /var/tmp/portage /var/tmp/portage_notmpfs/)
+    bindmounts=(
+    /var/portage/distfiles
+    /var/portage/packages
+    /var/tmp/ccache
+    /var/tmp/portage
+    /var/tmp/portage_notmpfs
+    )
 
     showTime() {
         systemd-nspawn --link-journal=no -D $newROOT "$@"
@@ -58,7 +75,9 @@ mountbinds() {
 
 umountbinds() {
     for i in $(seq $((${#bindmounts[@]} - 1)) -1 0); do
-        umount "$newROOT/${bindmounts[$i]}"
+        if grep -q "$(realpath "$newROOT/${bindmounts[$i]}")" /etc/mtab; then
+            umount "$newROOT/${bindmounts[$i]}"
+        fi
     done
 }
 
@@ -97,13 +116,11 @@ deblock() {
 tearDown() {
     deblock
 
-    if grep -q "$newROOT" /etc/mtab; then
-        umountbinds
-        if [ -d "$maint/$subvolHome" ]; then
-            umount $newROOT/home
-        fi
-        umount $newROOT
+    umountbinds
+    if [ -d "$maint/$subvolHome" ]; then
+        umount $newROOT/home
     fi
+    umount $newROOT
 }
 
 removeSnapshots() {
