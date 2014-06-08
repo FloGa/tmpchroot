@@ -31,6 +31,14 @@
     decided to not longer depend on systemd but instead optimize good old
     chroot.
 
+
+-   Retry unmounts on error
+
+    Try to unmount for 10 seconds, then give up and tell the user what they
+    can do.
+
+-   Show environment name on entering
+
 # Changes in 0.1.0
 
 Initial release
