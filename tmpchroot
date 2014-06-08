@@ -1,17 +1,79 @@
 #!/bin/bash
 
-device=/dev/sda6
+if [ "$UID" != 0 ]; then
+    echo "Sorry, you must be root to use this program!"
+    exit 1
+fi
+
 maint=/mnt/btrfs/maint
 envdir=/mnt/btrfs/chroot
 
+subvolRoot=ROOT
+subvolHome=HOME
+
+# Comments to grep:
+# - \K is a look-behind, not included in result.
+# - (?=xxx) is a look-ahead, also not included.
+# To sum it up: I get the string inside the brackets, which wil be the device
+# path.
+device=$(btrfs dev stats "$maint" | head -n1 | \
+    grep -Po "\[\K.+(?=\])")
+
 updateVariables() {
-    newROOTname=ROOT-chroot-$envname
-    newHOMEname=HOME-chroot-$envname
+    newROOTname=${subvolRoot}-chroot-$envname
+    newHOMEname=${subvolHome}-chroot-$envname
     newROOT=$envdir/$envname
 }
 
-bindmounts=(/var/portage/distfiles/ /var/portage/packages/ \
-    /var/tmp/ccache /var/tmp/portage /var/tmp/portage_notmpfs/)
+prepare() {
+    updateVariables
+
+    if [ "$_nspawn" = 314 ]; then
+        echo "INFO: systemd-nspawn is deprecated, please use chroot instead!"
+        useNspawn
+    else
+        useChroot
+    fi
+}
+
+useChroot() {
+    bindmounts=(
+    /dev
+    /dev/console
+    /dev/pts
+    /dev/shm
+    /proc
+    /proc/kmsg
+    /proc/sys
+    /run
+    /sys
+    /var/portage/distfiles
+    /var/portage/packages
+    /var/tmp/ccache
+    /var/tmp/portage
+    /var/tmp/portage_notmpfs
+    )
+
+    showTime() {
+        echo "Entering $newROOT ..."
+        chroot $newROOT "$@"
+    }
+}
+
+useNspawn() {
+    bindmounts=(
+    /var/portage/distfiles
+    /var/portage/packages
+    /var/tmp/ccache
+    /var/tmp/portage
+    /var/tmp/portage_notmpfs
+    )
+
+    showTime() {
+        echo "Entering $newROOT ..."
+        systemd-nspawn --link-journal=no -D $newROOT "$@"
+    }
+}
 
 mountbinds() {
     for i in ${bindmounts[@]}; do
@@ -21,14 +83,41 @@ mountbinds() {
 
 umountbinds() {
     for i in $(seq $((${#bindmounts[@]} - 1)) -1 0); do
-        umount "$newROOT/${bindmounts[$i]}"
+        if grep -q "$(realpath "$newROOT/${bindmounts[$i]}")" /etc/mtab; then
+            j=1
+            while ! umount "$newROOT/${bindmounts[$i]}" 2>/dev/null; do
+                echo "WARNING: Try $j of unmount failed for" \
+                    "$newROOT/${bindmounts[$i]}"
+
+                if [ "$j" -ge 5 ]; then
+                    echo "ERROR: Giving up, please close all accesses to"
+                    echo "  $newROOT/${bindmounts[$i]}"
+                    echo "  manually and call"
+                    echo "  \`$0 delete $envname\`"
+                    echo "  afterwards!"
+                    exit 1
+                fi
+
+                j=$((j + 1))
+                sleep 2
+            done
+        fi
     done
 }
 
 createSnapshots() {
     mount $maint
-    btrfs sub snap $maint/ROOT $maint/$newROOTname
-    btrfs sub snap $maint/HOME $maint/$newHOMEname
+
+    if [ ! -d $maint/$subvolRoot ]; then
+        echo "ERROR: \"$maint/$subvolRoot\" does not exist!"
+        umount $maint
+        exit 1
+    fi
+
+    btrfs sub snap $maint/$subvolRoot $maint/$newROOTname
+    if [ -d "$maint/$subvolHome" ]; then
+        btrfs sub snap $maint/$subvolHome $maint/$newHOMEname
+    fi
     umount $maint
 
     mkdir -p $newROOT
@@ -36,21 +125,26 @@ createSnapshots() {
 
 buildUp() {
     mount -o subvol=$newROOTname $device $newROOT
-    mount -o subvol=$newHOMEname $device $newROOT/home
+    if [ -d "$maint/$subvolHome" ]; then
+        mount -o subvol=$newHOMEname $device $newROOT/home
+    fi
 
     mountbinds
 }
 
-showTime() {
-    systemd-nspawn --link-journal=no -D $newROOT
-    /usr/local/bin/reset-nonblock
+deblock() {
+    perl -e "use Fcntl qw(F_GETFL F_SETFL O_NONBLOCK); \
+        fcntl(STDIN, F_SETFL, fcntl(STDIN, F_GETFL, 0) & ~O_NONBLOCK);"
 }
 
 tearDown() {
-    if grep -q "$newROOT" /etc/mtab; then
-        umountbinds
-        umount $newROOT/home $newROOT
+    deblock
+
+    umountbinds
+    if [ -d "$maint/$subvolHome" ]; then
+        umount $newROOT/home
     fi
+    umount $newROOT
 }
 
 removeSnapshots() {
@@ -66,87 +160,132 @@ removeSnapshots() {
         rmdir $newROOT
 
         mount $maint
-        btrfs sub del $maint/$newROOTname $maint/$newHOMEname
+        btrfs sub del $maint/$newROOTname
+        if [ -d "$maint/HOME" ]; then
+            btrfs sub del $maint/$newHOMEname
+        fi
         umount $maint
     fi
 }
 
 # --- Main Routine ---
 
-if [ -z "$1" ]; then
-    envname=$(date +%s%N)
-    updateVariables
-    createSnapshots
-    buildUp
-    showTime
-    tearDown
-    removeSnapshots
-elif [ "$1" = "list" ]; then
-    if [[ -d "$envdir" && -n $(ls $envdir) ]]; then
-        ls -1 $envdir
-    else
-        echo "No environments found."
-    fi
-elif [ "$1" = "create" ]; then
-    if [ -z "$2" ]; then
-        echo "Please name an environment!"
-    else
-        envname="$2"
-        updateVariables
-        if [ -d "$newROOT" ]; then
-            echo "There already is an environment \"$2\"!"
-        else
-            createSnapshots
-            buildUp
-            showTime
-            tearDown
-            removeSnapshots
-        fi
-    fi
-elif [ "$1" = "continue" ]; then
-    if [ -z "$2" ]; then
-        echo "Please name an environment!"
-    else
-        envname="$2"
-        updateVariables
-        if [ ! -d "$newROOT" ]; then
-            echo "There is no environment \"$2\"!"
-        else
-            buildUp
-            showTime
-            tearDown
-            removeSnapshots
-        fi
-    fi
-elif [ "$1" = "delete" ]; then
-    if [ "$2" = "-y" ]; then
-        _yes=42
-        shift
-    fi
+# Process arguments
 
-    if [ -z "$2" ]; then
-        echo "Please name an environment!"
-    else
-        while [ -n "$2" ]; do
-            envname="$2"
-            updateVariables
-            if [ ! -d "$newROOT" ]; then
-                echo "There is no environment \"$2\"!"
+args=( "$@" )
+for i in $(seq 0 $((${#args} - 1))); do
+    case ${args[$i]} in
+        "")
+            ;;
+        list | test)
+            action="${args[$i]}"
+            unset args[$i]
+            ;;
+        create | continue)
+            action="${args[$i]}"
+            envname="${args[$(($i + 1))]}"
+            unset args[$i] args[$(($i + 1))]
+            ;;
+        delete)
+            action="${args[$i]}"
+            unset args[$i]
+            break
+            ;;
+        -y)
+            _yes=42
+            unset args[$i]
+            ;;
+        --subvol-root)
+            subvolRoot="${args[$(($i + 1))]}"
+            unset args[$i] args[$(($i + 1))]
+            ;;
+        --subvol-home)
+            subvolHome="${args[$(($i + 1))]}"
+            unset args[$i] args[$(($i + 1))]
+            ;;
+        --nspawn)
+            _nspawn=314
+            unset args[$i]
+            ;;
+        --)
+            unset args[$i]
+            break
+            ;;
+        *)
+            echo "Unknown argument \"${args[$i]}\"!"
+            exit 1
+            ;;
+    esac
+done
+
+case "$action" in
+    "")
+        envname=$(date +%s%N)
+        prepare
+        createSnapshots
+        buildUp
+        showTime "${args[@]}"
+        tearDown
+        removeSnapshots
+        ;;
+    list)
+        if [[ -d "$envdir" && -n $(ls $envdir) ]]; then
+            ls -1 $envdir
+        else
+            echo "No environments found."
+        fi
+        ;;
+    create)
+        if [ -z "$envname" ]; then
+            echo "Please name an environment!"
+        else
+            prepare
+            if [ -d "$newROOT" ]; then
+                echo "There already is an environment \"$envname\"!"
             else
+                createSnapshots
+                buildUp
+                showTime "${args[@]}"
                 tearDown
                 removeSnapshots
             fi
-            shift
-        done
-    fi
-elif [ "$1" = "test" ]; then
-    envname=$(date +%s%N)
-    updateVariables
-    createSnapshots
-    mount -o subvol=$newROOTname $device $newROOT
-    mount -o subvol=$newHOMEname $device $newROOT/home
-    bindmount /usr/portage /var/portage/distfiles/ /var/portage/packages/
-    bindmount /var/tmp/ccache /var/tmp/portage
-else
-    echo "Unknown argument \"$1\"!"
-fi
+        fi
+        ;;
+    continue)
+        if [ -z "$envname" ]; then
+            echo "Please name an environment!"
+        else
+            prepare
+            if [ ! -d "$newROOT" ]; then
+                echo "There is no environment \"$envname\"!"
+            else
+                buildUp
+                showTime "${args[@]}"
+                tearDown
+                removeSnapshots
+            fi
+        fi
+        ;;
+    delete)
+        if [ -z "${args[*]}" ]; then
+            echo "Please name an environment!"
+        else
+            for i in "${args[@]}"; do
+                envname="$i"
+                prepare
+                if [ ! -d "$newROOT" ]; then
+                    echo "There is no environment \"$i\"!"
+                else
+                    tearDown
+                    removeSnapshots
+                fi
+            done
+        fi
+        ;;
+    test)
+        envname=$(date +%s%N)
+        prepare
+        createSnapshots
+        buildUp
+        ;;
+esac
