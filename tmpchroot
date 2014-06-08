@@ -28,7 +28,8 @@ updateVariables() {
 prepare() {
     updateVariables
 
-    if [ -x /usr/bin/systemd-nspawn ]; then
+    if [ "$_nspawn" = 314 ]; then
+        echo "INFO: systemd-nspawn is deprecated, please use chroot instead!"
         useNspawn
     else
         useChroot
@@ -183,6 +184,10 @@ for i in $(seq 0 $((${#args} - 1))); do
         --subvol-home)
             subvolHome="${args[$(($i + 1))]}"
             unset args[$i] args[$(($i + 1))]
+            ;;
+        --nspawn)
+            _nspawn=314
+            unset args[$i]
             ;;
         --)
             unset args[$i]
