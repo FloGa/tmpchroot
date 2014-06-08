@@ -55,6 +55,7 @@ useChroot() {
     )
 
     showTime() {
+        echo "Entering $newROOT ..."
         chroot $newROOT "$@"
     }
 }
@@ -69,6 +70,7 @@ useNspawn() {
     )
 
     showTime() {
+        echo "Entering $newROOT ..."
         systemd-nspawn --link-journal=no -D $newROOT "$@"
     }
 }
