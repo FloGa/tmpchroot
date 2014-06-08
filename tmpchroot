@@ -1,5 +1,10 @@
 #!/bin/bash
 
+if [ "$UID" != 0 ]; then
+    echo "Sorry, you must be root to use this program!"
+    exit 1
+fi
+
 maint=/mnt/btrfs/maint
 envdir=/mnt/btrfs/chroot
 
