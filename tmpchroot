@@ -39,13 +39,8 @@ prepare() {
 useChroot() {
     bindmounts=(
     /dev
-    /dev/console
     /dev/pts
-    /dev/shm
     /proc
-    /proc/kmsg
-    /proc/sys
-    /run
     /sys
     /var/portage/distfiles
     /var/portage/packages
@@ -83,7 +78,8 @@ mountbinds() {
 
 umountbinds() {
     for i in $(seq $((${#bindmounts[@]} - 1)) -1 0); do
-        if grep -q "$(realpath "$newROOT/${bindmounts[$i]}")" /etc/mtab; then
+        if grep -q "$(realpath -m "$newROOT/${bindmounts[$i]}")" /etc/mtab
+        then
             j=1
             while ! umount "$newROOT/${bindmounts[$i]}" 2>/dev/null; do
                 echo "WARNING: Try $j of unmount failed for" \
@@ -116,6 +112,7 @@ createSnapshots() {
 
     btrfs sub snap $maint/$subvolRoot $maint/$newROOTname
     if [ -d "$maint/$subvolHome" ]; then
+        _home=12
         btrfs sub snap $maint/$subvolHome $maint/$newHOMEname
     fi
     umount $maint
@@ -125,9 +122,11 @@ createSnapshots() {
 
 buildUp() {
     mount -o subvol=$newROOTname $device $newROOT
-    if [ -d "$maint/$subvolHome" ]; then
+    if [ "$_home" = 12 ]; then
         mount -o subvol=$newHOMEname $device $newROOT/home
     fi
+
+    echo "$envname" >"$newROOT/etc/debian_chroot"
 
     mountbinds
 }
@@ -140,8 +139,14 @@ deblock() {
 tearDown() {
     deblock
 
+    _processes=$(lsof $newROOT 2>/dev/null | \
+        sed "1d" | awk '{print $2}' | sort -u)
+    if [ -n "$_processes" ]; then
+        kill -9 $_processes
+    fi
+
     umountbinds
-    if [ -d "$maint/$subvolHome" ]; then
+    if [ "$_home" = 12 ]; then
         umount $newROOT/home
     fi
     umount $newROOT
