@@ -6,6 +6,11 @@
     chroot-name being the content of /etc/debian_chroot. This way it's very
     easy to identify that you are inside a chroot.
 
+-   Reduce number of bind mounts
+
+    Some of the mounts tear open holes to the actual system. To prevent that,
+    I removed some of them.
+
 # Changes in 0.2.0
 
 -   Simplify test command

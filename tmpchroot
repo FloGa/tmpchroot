@@ -39,13 +39,8 @@ prepare() {
 useChroot() {
     bindmounts=(
     /dev
-    /dev/console
     /dev/pts
-    /dev/shm
     /proc
-    /proc/kmsg
-    /proc/sys
-    /run
     /sys
     /var/portage/distfiles
     /var/portage/packages
