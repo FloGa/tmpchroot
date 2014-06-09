@@ -1,4 +1,4 @@
-# Changes since latest release
+# Changes in 0.3.0
 
 -   Create /etc/debian_chroot for use with bash
 
@@ -21,6 +21,11 @@
     Sometimes there are background processes wich prevent a clean unmount.
     Since the environment is a temporal playground in the first place, those
     processes can safely be killed.
+
+-   Mount home partition again
+
+    Due to a silly mistake the home partition was not mounted for some time
+    now. Fixed that.
 
 # Changes in 0.2.0
 
