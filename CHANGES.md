@@ -6,6 +6,22 @@
     chroot-name being the content of /etc/debian_chroot. This way it's very
     easy to identify that you are inside a chroot.
 
+-   Reduce number of bind mounts
+
+    Some of the mounts tear open holes to the actual system. To prevent that,
+    I removed some of them.
+
+-   Add -m flag to realpath
+
+    The -m flag gets realpath to print out the canonical path, even if the
+    directory does not exist.
+
+-   Kill processes before unmounting
+
+    Sometimes there are background processes wich prevent a clean unmount.
+    Since the environment is a temporal playground in the first place, those
+    processes can safely be killed.
+
 # Changes in 0.2.0
 
 -   Simplify test command
