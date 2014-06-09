@@ -78,7 +78,8 @@ mountbinds() {
 
 umountbinds() {
     for i in $(seq $((${#bindmounts[@]} - 1)) -1 0); do
-        if grep -q "$(realpath "$newROOT/${bindmounts[$i]}")" /etc/mtab; then
+        if grep -q "$(realpath -m "$newROOT/${bindmounts[$i]}")" /etc/mtab
+        then
             j=1
             while ! umount "$newROOT/${bindmounts[$i]}" 2>/dev/null; do
                 echo "WARNING: Try $j of unmount failed for" \

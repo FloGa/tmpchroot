@@ -11,6 +11,11 @@
     Some of the mounts tear open holes to the actual system. To prevent that,
     I removed some of them.
 
+-   Add -m flag to realpath
+
+    The -m flag gets realpath to print out the canonical path, even if the
+    directory does not exist.
+
 # Changes in 0.2.0
 
 -   Simplify test command
