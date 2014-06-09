@@ -1,5 +1,11 @@
 # Changes since latest release
 
+-   Create /etc/debian_chroot for use with bash
+
+    Most default bashrc show a special string like `(chroot-name)` with
+    chroot-name being the content of /etc/debian_chroot. This way it's very
+    easy to identify that you are inside a chroot.
+
 # Changes in 0.2.0
 
 -   Simplify test command
