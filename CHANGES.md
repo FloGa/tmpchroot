@@ -1,3 +1,5 @@
+# Changes in 0.3.1
+
 # Changes in 0.3.0
 
 -   Create /etc/debian_chroot for use with bash
