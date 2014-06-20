@@ -76,31 +76,6 @@ mountbinds() {
     done
 }
 
-umountbinds() {
-    for i in $(seq $((${#bindmounts[@]} - 1)) -1 0); do
-        if grep -q "$(realpath -m "$newROOT/${bindmounts[$i]}")" /etc/mtab
-        then
-            j=1
-            while ! umount "$newROOT/${bindmounts[$i]}" 2>/dev/null; do
-                echo "WARNING: Try $j of unmount failed for" \
-                    "$newROOT/${bindmounts[$i]}"
-
-                if [ "$j" -ge 5 ]; then
-                    echo "ERROR: Giving up, please close all accesses to"
-                    echo "  $newROOT/${bindmounts[$i]}"
-                    echo "  manually and call"
-                    echo "  \`$0 delete $envname\`"
-                    echo "  afterwards!"
-                    exit 1
-                fi
-
-                j=$((j + 1))
-                sleep 2
-            done
-        fi
-    done
-}
-
 createSnapshots() {
     mount $maint
 
@@ -145,11 +120,9 @@ tearDown() {
         kill -9 $_processes
     fi
 
-    umountbinds
-    if [ "$_home" = 12 ]; then
-        umount $newROOT/home
+    if grep -q "$(realpath -m "$newROOT")" /etc/mtab; then
+        umount -R $newROOT
     fi
-    umount $newROOT
 }
 
 removeSnapshots() {
