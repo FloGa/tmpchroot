@@ -1,3 +1,10 @@
+# Changes in 0.3.2
+
+-   Restore umount retry feature
+
+    I removed that feature with the last update, thinking I wouldn't need it
+    anymore, but I was wrong. So, here it is again!
+
 # Changes in 0.3.1
 
 -   Fix wrong unmount behavior
