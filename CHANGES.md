@@ -1,5 +1,16 @@
 # Changes since latest release
 
+# Changes in 0.3.1
+
+-   Fix wrong unmount behavior
+
+    I accidently used a variable to decide whether to unmount the home
+    partition. In some situations, this variable is not set but home was
+    mounted anyway.
+
+    Now a recursive unmount is used to unmount everything under the new root
+    directory.
+
 # Changes in 0.3.0
 
 -   Create /etc/debian_chroot for use with bash
