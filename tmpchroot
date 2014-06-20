@@ -121,7 +121,23 @@ tearDown() {
     fi
 
     if grep -q "$(realpath -m "$newROOT")" /etc/mtab; then
-        umount -R $newROOT
+        j=1
+        while ! umount -R "$newROOT" 2>/dev/null; do
+            echo "WARNING: Try $j of unmount failed for" \
+                "$newROOT"
+
+            if [ "$j" -ge 5 ]; then
+                echo "ERROR: Giving up, please close all accesses to"
+                echo "  $newROOT"
+                echo "  manually and call"
+                echo "  \`$0 delete $envname\`"
+                echo "  afterwards!"
+                exit 1
+            fi
+
+            j=$((j + 1))
+            sleep 2
+        done
     fi
 }
 
