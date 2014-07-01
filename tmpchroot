@@ -154,7 +154,7 @@ removeSnapshots() {
 
         mount $maint
         btrfs sub del $maint/$newROOTname
-        if [ -d "$maint/HOME" ]; then
+        if btrfs sub list $maint | grep "$newHOMEname" -q; then
             btrfs sub del $maint/$newHOMEname
         fi
         umount $maint
