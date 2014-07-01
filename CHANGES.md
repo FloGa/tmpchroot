@@ -1,5 +1,10 @@
 # Changes in 0.3.3
 
+-   Fix yet another bug with mounting home
+
+    Instead of reading variables, that may or may not be correctly set, I now
+    check whether the home snapshot is listed as a subvolume.
+
 # Changes in 0.3.2
 
 -   Restore umount retry feature
