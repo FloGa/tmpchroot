@@ -86,7 +86,7 @@ createSnapshots() {
     fi
 
     btrfs sub snap $maint/$subvolRoot $maint/$newROOTname
-    if [ -d "$maint/$subvolHome" ]; then
+    if [ "$_nohome" != 314 -a -d "$maint/$subvolHome" ]; then
         btrfs sub snap $maint/$subvolHome $maint/$newHOMEname
     fi
     umount $maint
@@ -198,6 +198,10 @@ for i in $(seq 0 $((${#args} - 1))); do
             ;;
         --nspawn)
             _nspawn=314
+            unset args[$i]
+            ;;
+        --nohome)
+            _nohome=314
             unset args[$i]
             ;;
         --)
