@@ -87,7 +87,6 @@ createSnapshots() {
 
     btrfs sub snap $maint/$subvolRoot $maint/$newROOTname
     if [ -d "$maint/$subvolHome" ]; then
-        _home=12
         btrfs sub snap $maint/$subvolHome $maint/$newHOMEname
     fi
     umount $maint
@@ -97,7 +96,7 @@ createSnapshots() {
 
 buildUp() {
     mount -o subvol=$newROOTname $device $newROOT
-    if [ "$_home" = 12 ]; then
+    if btrfs sub list $maint | grep "$newHOMEname" -q; then
         mount -o subvol=$newHOMEname $device $newROOT/home
     fi
 
