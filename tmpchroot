@@ -86,7 +86,7 @@ createSnapshots() {
     fi
 
     btrfs sub snap $maint/$subvolRoot $maint/$newROOTname
-    if [ -d "$maint/$subvolHome" ]; then
+    if [ "$_nohome" != 314 -a -d "$maint/$subvolHome" ]; then
         btrfs sub snap $maint/$subvolHome $maint/$newHOMEname
     fi
     umount $maint
@@ -143,6 +143,8 @@ tearDown() {
 removeSnapshots() {
     if [ "$_yes" = "42" ]; then
         remove="yes"
+    elif [ "$_no" = "42" ]; then
+        remove="no"
     else
         read -p "Remove Environment \"$envname\"? " remove
     fi
@@ -154,7 +156,7 @@ removeSnapshots() {
 
         mount $maint
         btrfs sub del $maint/$newROOTname
-        if [ -d "$maint/HOME" ]; then
+        if btrfs sub list $maint | grep "$newHOMEname" -q; then
             btrfs sub del $maint/$newHOMEname
         fi
         umount $maint
@@ -165,47 +167,56 @@ removeSnapshots() {
 
 # Process arguments
 
-args=( "$@" )
-for i in $(seq 0 $((${#args} - 1))); do
-    case ${args[$i]} in
-        "")
-            ;;
+while [ $# -gt 0 ]; do
+    key=$1
+    shift
+
+    case $key in
         list | test)
-            action="${args[$i]}"
-            unset args[$i]
+            action="$key"
             ;;
         create | continue)
-            action="${args[$i]}"
-            envname="${args[$(($i + 1))]}"
-            unset args[$i] args[$(($i + 1))]
+            action="$key"
+            envname="$1"
+            shift
             ;;
         delete)
-            action="${args[$i]}"
-            unset args[$i]
+            action="$key"
             break
             ;;
         -y)
+            if [ "$_no" = "42" ]; then
+                echo "You cannot use -y and -n at the same time!"
+                exit 1
+            fi
             _yes=42
-            unset args[$i]
+            ;;
+        -n)
+            if [ "$_yes" = "42" ]; then
+                echo "You cannot use -y and -n at the same time!"
+                exit 1
+            fi
+            _no=42
             ;;
         --subvol-root)
-            subvolRoot="${args[$(($i + 1))]}"
-            unset args[$i] args[$(($i + 1))]
+            subvolRoot="$1"
+            shift
             ;;
         --subvol-home)
-            subvolHome="${args[$(($i + 1))]}"
-            unset args[$i] args[$(($i + 1))]
+            subvolHome="$1"
+            shift
             ;;
         --nspawn)
             _nspawn=314
-            unset args[$i]
+            ;;
+        --nohome)
+            _nohome=314
             ;;
         --)
-            unset args[$i]
             break
             ;;
         *)
-            echo "Unknown argument \"${args[$i]}\"!"
+            echo "Unknown argument \"$key\"!"
             exit 1
             ;;
     esac
@@ -217,7 +228,7 @@ case "$action" in
         prepare
         createSnapshots
         buildUp
-        showTime "${args[@]}"
+        showTime "$@"
         tearDown
         removeSnapshots
         ;;
@@ -238,7 +249,7 @@ case "$action" in
             else
                 createSnapshots
                 buildUp
-                showTime "${args[@]}"
+                showTime "$@"
                 tearDown
                 removeSnapshots
             fi
@@ -253,17 +264,17 @@ case "$action" in
                 echo "There is no environment \"$envname\"!"
             else
                 buildUp
-                showTime "${args[@]}"
+                showTime "$@"
                 tearDown
                 removeSnapshots
             fi
         fi
         ;;
     delete)
-        if [ -z "${args[*]}" ]; then
+        if [ -z "$*" ]; then
             echo "Please name an environment!"
         else
-            for i in "${args[@]}"; do
+            for i in "$@"; do
                 envname="$i"
                 prepare
                 if [ ! -d "$newROOT" ]; then
