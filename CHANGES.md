@@ -1,5 +1,21 @@
 # Changes in 0.4.0
 
+-   Remove home snapshot only if existent
+
+-   Add option --nohome for not snapshotting home
+
+    Naturally, home will not be mounted afterwards.
+
+-   Re-write parameter parsing
+
+    Do not use another array for that, but process them directly. The
+    additional array yielded strange behaviors and errors.
+
+-   Add support for -n flag
+
+    With this option, tmpchroot will not remove snapshots and also will not
+    ask for that.
+
 # Changes in 0.3.3
 
 -   Fix yet another bug with mounting home
