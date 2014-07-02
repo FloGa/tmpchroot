@@ -1,3 +1,5 @@
+# Changes since latest release
+
 # Changes in 0.4.0
 
 -   Remove home snapshot only if existent
