@@ -165,51 +165,45 @@ removeSnapshots() {
 
 # Process arguments
 
-args=( "$@" )
-for i in $(seq 0 $((${#args} - 1))); do
-    case ${args[$i]} in
-        "")
-            ;;
+while [ $# -gt 0 ]; do
+    key=$1
+    shift
+
+    case $key in
         list | test)
-            action="${args[$i]}"
-            unset args[$i]
+            action="$key"
             ;;
         create | continue)
-            action="${args[$i]}"
-            envname="${args[$(($i + 1))]}"
-            unset args[$i] args[$(($i + 1))]
+            action="$key"
+            envname="$1"
+            shift
             ;;
         delete)
-            action="${args[$i]}"
-            unset args[$i]
+            action="$key"
             break
             ;;
         -y)
             _yes=42
-            unset args[$i]
             ;;
         --subvol-root)
-            subvolRoot="${args[$(($i + 1))]}"
-            unset args[$i] args[$(($i + 1))]
+            subvolRoot="$1"
+            shift
             ;;
         --subvol-home)
-            subvolHome="${args[$(($i + 1))]}"
-            unset args[$i] args[$(($i + 1))]
+            subvolHome="$1"
+            shift
             ;;
         --nspawn)
             _nspawn=314
-            unset args[$i]
             ;;
         --nohome)
             _nohome=314
-            unset args[$i]
             ;;
         --)
-            unset args[$i]
             break
             ;;
         *)
-            echo "Unknown argument \"${args[$i]}\"!"
+            echo "Unknown argument \"$key\"!"
             exit 1
             ;;
     esac
@@ -221,7 +215,7 @@ case "$action" in
         prepare
         createSnapshots
         buildUp
-        showTime "${args[@]}"
+        showTime "$@"
         tearDown
         removeSnapshots
         ;;
@@ -242,7 +236,7 @@ case "$action" in
             else
                 createSnapshots
                 buildUp
-                showTime "${args[@]}"
+                showTime "$@"
                 tearDown
                 removeSnapshots
             fi
@@ -257,17 +251,17 @@ case "$action" in
                 echo "There is no environment \"$envname\"!"
             else
                 buildUp
-                showTime "${args[@]}"
+                showTime "$@"
                 tearDown
                 removeSnapshots
             fi
         fi
         ;;
     delete)
-        if [ -z "${args[*]}" ]; then
+        if [ -z "$*" ]; then
             echo "Please name an environment!"
         else
-            for i in "${args[@]}"; do
+            for i in "$@"; do
                 envname="$i"
                 prepare
                 if [ ! -d "$newROOT" ]; then
