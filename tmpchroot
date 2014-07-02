@@ -143,6 +143,8 @@ tearDown() {
 removeSnapshots() {
     if [ "$_yes" = "42" ]; then
         remove="yes"
+    elif [ "$_no" = "42" ]; then
+        remove="no"
     else
         read -p "Remove Environment \"$envname\"? " remove
     fi
@@ -183,7 +185,18 @@ while [ $# -gt 0 ]; do
             break
             ;;
         -y)
+            if [ "$_no" = "42" ]; then
+                echo "You cannot use -y and -n at the same time!"
+                exit 1
+            fi
             _yes=42
+            ;;
+        -n)
+            if [ "$_yes" = "42" ]; then
+                echo "You cannot use -y and -n at the same time!"
+                exit 1
+            fi
+            _no=42
             ;;
         --subvol-root)
             subvolRoot="$1"
