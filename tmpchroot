@@ -77,11 +77,8 @@ mountbinds() {
 }
 
 createSnapshots() {
-    mount $maint
-
     if [ ! -d $maint/$subvolRoot ]; then
         echo "ERROR: \"$maint/$subvolRoot\" does not exist!"
-        umount $maint
         exit 1
     fi
 
@@ -89,7 +86,6 @@ createSnapshots() {
     if [ "$_nohome" != 314 -a -d "$maint/$subvolHome" ]; then
         btrfs sub snap $maint/$subvolHome $maint/$newHOMEname
     fi
-    umount $maint
 
     mkdir -p $newROOT
 }
@@ -154,12 +150,10 @@ removeSnapshots() {
     else
         rmdir $newROOT
 
-        mount $maint
         btrfs sub del $maint/$newROOTname
         if btrfs sub list $maint | grep "$newHOMEname" -q; then
             btrfs sub del $maint/$newHOMEname
         fi
-        umount $maint
     fi
 }
 
