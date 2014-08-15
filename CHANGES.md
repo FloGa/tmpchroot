@@ -1,3 +1,5 @@
+# Changes in 0.5.1
+
 # Changes in 0.5.0
 
 -   Do not automount/-unmount btrfs-maint
