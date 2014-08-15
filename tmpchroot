@@ -50,8 +50,28 @@ useChroot() {
     )
 
     showTime() {
+        # Search for an unused port
+        read lowerPort upperPort < /proc/sys/net/ipv4/ip_local_port_range
+        while :; do
+            for (( port = lowerPort ; port <= upperPort ; port++ )); do
+                # Returns *true* if port is *used*!
+                # So a *free* port will return *false*!
+                sh -c "exec 9>/dev/tcp/127.0.0.1/$port" 2>/dev/null || break 2
+            done
+        done
+        exec 9>&-
+
+        # Only allow localhost to connect to localhost
+        cat /root/.ssh/id_rsa.pub >"$newROOT/root/.ssh/authorized_keys"
+
         echo "Entering $newROOT ..."
-        chroot $newROOT "$@"
+
+        chroot $newROOT /usr/sbin/sshd -p $port
+
+        ssh -o UserKnownHostsFile=/dev/null \
+            -o StrictHostKeyChecking=no \
+            -o LogLevel=quiet \
+            -p $port localhost "$@"
     }
 }
 
