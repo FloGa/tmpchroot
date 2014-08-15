@@ -1,5 +1,40 @@
 # Changes in 0.5.0
 
+-   Do not automount/-unmount btrfs-maint
+
+    After several experiments, it seems like it is generally a bad idea to
+    always mount and unmount the maint-volume for just a few seconds. So I
+    just assume that it is mounted and leave the rest to the user.
+
+-   Sync after unmounting
+
+    Sometimes the unmounting happens not immediately, as in it is not written
+    to disk but just in the memory. That leads to errors when trying to delete
+    the unmounted directory, since it since not to be empty.
+
+    Syncing ensures that the unmounting finished completely.
+
+-   Nicer killing strategy
+
+    As absurd as it sounds, there really is a nicer way of killing processes
+    than just 9-ing them (SIGKILL). First, try to 15-ing them (SIGTERM) and
+    afterwards slaughter the more resistant processes as usual with -9.
+
+-   Use SSH to connect to container
+
+    There are many problems with using terminals directly in the chroot shell.
+    It is generally more flexible to start a local sshd server inside the
+    container and connect with ssh client.
+
+-   Create new mounts to kernel file systems
+
+    The so-called "best practice" of bind mounting every kernel file system
+    like /proc, /sys, /dev, and especially /dev/pts can hurt and even break
+    the complete environment, not just one container.
+
+    Creating new instances of those file systems inside the container solves
+    this issue.
+
 # Changes in 0.4.0
 
 -   Remove home snapshot only if existent
