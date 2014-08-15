@@ -133,6 +133,7 @@ tearDown() {
             j=$((j + 1))
             sleep 2
         done
+        sync
     fi
 }
 
