@@ -1,3 +1,11 @@
+# Changes in 0.5.1
+
+-   Force tty allocation
+
+    When running ssh with a command argument, then no TTY is allocated. This
+    prevents certain programs to work properly. The ssh flag -t forces
+    allocation of such a TTY.
+
 # Changes in 0.5.0
 
 -   Do not automount/-unmount btrfs-maint

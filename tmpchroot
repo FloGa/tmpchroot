@@ -75,7 +75,7 @@ useChroot() {
         ssh -o UserKnownHostsFile=/dev/null \
             -o StrictHostKeyChecking=no \
             -o LogLevel=quiet \
-            -p $port localhost "$@"
+            -p $port -t localhost "$@"
     }
 }
 
