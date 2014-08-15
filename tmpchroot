@@ -38,10 +38,6 @@ prepare() {
 
 useChroot() {
     bindmounts=(
-    /dev
-    /dev/pts
-    /proc
-    /sys
     /var/portage/distfiles
     /var/portage/packages
     /var/tmp/ccache
@@ -50,8 +46,36 @@ useChroot() {
     )
 
     showTime() {
+        # Search for an unused port
+        read lowerPort upperPort < /proc/sys/net/ipv4/ip_local_port_range
+        while :; do
+            for (( port = lowerPort ; port <= upperPort ; port++ )); do
+                # Returns *true* if port is *used*!
+                # So a *free* port will return *false*!
+                sh -c "exec 9>/dev/tcp/127.0.0.1/$port" 2>/dev/null || break 2
+            done
+        done
+        exec 9>&-
+
+        # Only allow localhost to connect to localhost
+        cat /root/.ssh/id_rsa.pub >"$newROOT/root/.ssh/authorized_keys"
+
         echo "Entering $newROOT ..."
-        chroot $newROOT "$@"
+
+        chroot $newROOT sh -c " \
+            mount -t proc iproc$envname /proc; \
+            mount -t sysfs isys$envname /sys; \
+            mount -t devtmpfs idev$envname /dev; \
+            mount -t devpts -o newinstance,gid=5,mode=666,ptmxmode=666 \
+                idevpts$envname /dev/pts; \
+            rm -f /dev/ptmx; \
+            ln -s pts/ptmx /dev/ptmx; \
+            /usr/sbin/sshd -p $port"
+
+        ssh -o UserKnownHostsFile=/dev/null \
+            -o StrictHostKeyChecking=no \
+            -o LogLevel=quiet \
+            -p $port localhost "$@"
     }
 }
 
@@ -77,11 +101,8 @@ mountbinds() {
 }
 
 createSnapshots() {
-    mount $maint
-
     if [ ! -d $maint/$subvolRoot ]; then
         echo "ERROR: \"$maint/$subvolRoot\" does not exist!"
-        umount $maint
         exit 1
     fi
 
@@ -89,7 +110,6 @@ createSnapshots() {
     if [ "$_nohome" != 314 -a -d "$maint/$subvolHome" ]; then
         btrfs sub snap $maint/$subvolHome $maint/$newHOMEname
     fi
-    umount $maint
 
     mkdir -p $newROOT
 }
@@ -116,6 +136,12 @@ tearDown() {
     _processes=$(lsof $newROOT 2>/dev/null | \
         sed "1d" | awk '{print $2}' | sort -u)
     if [ -n "$_processes" ]; then
+        kill -15 $_processes
+    fi
+
+    _processes=$(lsof $newROOT 2>/dev/null | \
+        sed "1d" | awk '{print $2}' | sort -u)
+    if [ -n "$_processes" ]; then
         kill -9 $_processes
     fi
 
@@ -137,6 +163,7 @@ tearDown() {
             j=$((j + 1))
             sleep 2
         done
+        sync
     fi
 }
 
@@ -154,12 +181,10 @@ removeSnapshots() {
     else
         rmdir $newROOT
 
-        mount $maint
         btrfs sub del $maint/$newROOTname
         if btrfs sub list $maint | grep "$newHOMEname" -q; then
             btrfs sub del $maint/$newHOMEname
         fi
-        umount $maint
     fi
 }
 
