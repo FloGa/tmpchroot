@@ -38,10 +38,6 @@ prepare() {
 
 useChroot() {
     bindmounts=(
-    /dev
-    /dev/pts
-    /proc
-    /sys
     /var/portage/distfiles
     /var/portage/packages
     /var/tmp/ccache
@@ -66,7 +62,15 @@ useChroot() {
 
         echo "Entering $newROOT ..."
 
-        chroot $newROOT /usr/sbin/sshd -p $port
+        chroot $newROOT sh -c " \
+            mount -t proc iproc$envname /proc; \
+            mount -t sysfs isys$envname /sys; \
+            mount -t devtmpfs idev$envname /dev; \
+            mount -t devpts -o newinstance,gid=5,mode=666,ptmxmode=666 \
+                idevpts$envname /dev/pts; \
+            rm -f /dev/ptmx; \
+            ln -s pts/ptmx /dev/ptmx; \
+            /usr/sbin/sshd -p $port"
 
         ssh -o UserKnownHostsFile=/dev/null \
             -o StrictHostKeyChecking=no \
