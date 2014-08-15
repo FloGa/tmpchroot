@@ -112,6 +112,12 @@ tearDown() {
     _processes=$(lsof $newROOT 2>/dev/null | \
         sed "1d" | awk '{print $2}' | sort -u)
     if [ -n "$_processes" ]; then
+        kill -15 $_processes
+    fi
+
+    _processes=$(lsof $newROOT 2>/dev/null | \
+        sed "1d" | awk '{print $2}' | sort -u)
+    if [ -n "$_processes" ]; then
         kill -9 $_processes
     fi
 
