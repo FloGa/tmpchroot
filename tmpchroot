@@ -68,6 +68,7 @@ useChroot() {
             mount -t devtmpfs idev$envname /dev; \
             mount -t devpts -o newinstance,gid=5,mode=666,ptmxmode=666 \
                 idevpts$envname /dev/pts; \
+            sync; \
             rm -f /dev/ptmx; \
             ln -s pts/ptmx /dev/ptmx; \
             /usr/sbin/sshd -p $port"

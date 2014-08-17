@@ -1,3 +1,14 @@
+# Changes in 0.5.2
+
+-   Sync after mounting /dev/pts
+
+    If the processor is too slow, it may be that the mounting takes a bit
+    longer than the mount command per se. So any commands afterwards may not
+    see the mounted file systems.
+
+    Sync forces to flush all cached operations such as mounting before going
+    on.
+
 # Changes in 0.5.1
 
 -   Force tty allocation
