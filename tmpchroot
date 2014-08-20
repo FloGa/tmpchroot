@@ -41,8 +41,6 @@ useChroot() {
     /var/portage/distfiles
     /var/portage/packages
     /var/tmp/ccache
-    /var/tmp/portage
-    /var/tmp/portage_notmpfs
     )
 
     showTime() {
@@ -70,7 +68,10 @@ useChroot() {
                 idevpts$envname /dev/pts; \
             sync; \
             rm -f /dev/ptmx; \
-            ln -s pts/ptmx /dev/ptmx; \
+            ln -sf pts/ptmx /dev/ptmx; \
+            mount /var/tmp/portage; \
+            mount -t tmpfs tmpfs /dev/shm; \
+            mount -t tmpfs tmpfs /run; \
             /usr/sbin/sshd -p $port"
 
         ssh -o UserKnownHostsFile=/dev/null \
@@ -80,6 +81,7 @@ useChroot() {
     }
 }
 
+# Deprecated. Will be deleted soon.
 useNspawn() {
     bindmounts=(
     /var/portage/distfiles
@@ -92,6 +94,7 @@ useNspawn() {
     showTime() {
         echo "Entering $newROOT ..."
         systemd-nspawn --link-journal=no -D $newROOT "$@"
+        deblock
     }
 }
 
@@ -132,8 +135,6 @@ deblock() {
 }
 
 tearDown() {
-    deblock
-
     _processes=$(lsof $newROOT 2>/dev/null | \
         sed "1d" | awk '{print $2}' | sort -u)
     if [ -n "$_processes" ]; then
