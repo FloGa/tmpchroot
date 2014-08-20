@@ -1,5 +1,24 @@
 # Changes since latest release
 
+-   Force creation of symlink in case rm fails
+
+    If mounting of /dev takes longer then execution of rm, then a warning like
+    "symlink already exists" may appear. The -f flag of ln takes care of that
+    and tries to delete the file once more.
+
+-   Add deprecation comment for nspawn
+
+-   Replace some bind mounts with real ones
+
+    To provide more isolation, re-create some mounts inside the container
+    instead of bind mounting from outside. Also, add some tmpfs mounts.
+
+-   Move deblock call
+
+    The deblock is only needed due to a bug in nspawn, so call it directly
+    after nspawn. Since this is deprecated anyway, it should'nt make any
+    difference, except for one less useless call when using chroot.
+
 # Changes in 0.5.2
 
 -   Sync after mounting /dev/pts
