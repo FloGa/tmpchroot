@@ -80,6 +80,7 @@ useChroot() {
     }
 }
 
+# Deprecated. Will be deleted soon.
 useNspawn() {
     bindmounts=(
     /var/portage/distfiles
