@@ -1,4 +1,4 @@
-# Changes since latest release
+# Changes in 0.6.0
 
 -   Force creation of symlink in case rm fails
 
