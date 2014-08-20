@@ -72,6 +72,9 @@ useChroot() {
             mount /var/tmp/portage; \
             mount -t tmpfs tmpfs /dev/shm; \
             mount -t tmpfs tmpfs /run; \
+            touch /var/run/utmp; \
+            chgrp utmp /var/run/utmp; \
+            chmod 664 /var/run/utmp; \
             /usr/sbin/sshd -p $port"
 
         ssh -o UserKnownHostsFile=/dev/null \
