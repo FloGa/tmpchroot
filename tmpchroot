@@ -70,7 +70,7 @@ useChroot() {
                 idevpts$envname /dev/pts; \
             sync; \
             rm -f /dev/ptmx; \
-            ln -s pts/ptmx /dev/ptmx; \
+            ln -sf pts/ptmx /dev/ptmx; \
             /usr/sbin/sshd -p $port"
 
         ssh -o UserKnownHostsFile=/dev/null \
