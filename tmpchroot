@@ -47,11 +47,10 @@ useChroot() {
         # Search for an unused port
         read lowerPort upperPort < /proc/sys/net/ipv4/ip_local_port_range
         while :; do
-            for (( port = lowerPort ; port <= upperPort ; port++ )); do
-                # Returns *true* if port is *used*!
-                # So a *free* port will return *false*!
-                sh -c "exec 9>/dev/tcp/127.0.0.1/$port" 2>/dev/null || break 2
-            done
+            port=$(shuf -i $lowerPort-$upperPort -n 1)
+            # Returns *true* if port is *used*!
+            # So a *free* port will return *false*!
+            sh -c "exec 9>/dev/tcp/127.0.0.1/$port" 2>/dev/null || break
         done
         exec 9>&-
 
