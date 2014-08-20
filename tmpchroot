@@ -94,6 +94,7 @@ useNspawn() {
     showTime() {
         echo "Entering $newROOT ..."
         systemd-nspawn --link-journal=no -D $newROOT "$@"
+        deblock
     }
 }
 
@@ -134,8 +135,6 @@ deblock() {
 }
 
 tearDown() {
-    deblock
-
     _processes=$(lsof $newROOT 2>/dev/null | \
         sed "1d" | awk '{print $2}' | sort -u)
     if [ -n "$_processes" ]; then
