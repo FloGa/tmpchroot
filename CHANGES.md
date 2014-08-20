@@ -1,5 +1,18 @@
 # Changes in 0.6.1
 
+-   Create /var/run/utmp
+
+    This file keeps track of logins to the system and is needed by some
+    programs, for example screen.
+
+-   Improve random port allocation
+
+    The delay between finding an unused port and starting the ssh server may
+    cause multiple servers using the same port.
+
+    Now, on each iteration a random port is picked and tested until a free one
+    is found.
+
 # Changes in 0.6.0
 
 -   Force creation of symlink in case rm fails
