@@ -1,3 +1,5 @@
+# Changes in 0.6.1
+
 # Changes in 0.6.0
 
 -   Force creation of symlink in case rm fails
