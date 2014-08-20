@@ -41,8 +41,6 @@ useChroot() {
     /var/portage/distfiles
     /var/portage/packages
     /var/tmp/ccache
-    /var/tmp/portage
-    /var/tmp/portage_notmpfs
     )
 
     showTime() {
@@ -71,6 +69,9 @@ useChroot() {
             sync; \
             rm -f /dev/ptmx; \
             ln -sf pts/ptmx /dev/ptmx; \
+            mount /var/tmp/portage; \
+            mount -t tmpfs tmpfs /dev/shm; \
+            mount -t tmpfs tmpfs /run; \
             /usr/sbin/sshd -p $port"
 
         ssh -o UserKnownHostsFile=/dev/null \
