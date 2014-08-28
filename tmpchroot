@@ -155,6 +155,8 @@ tearDown() {
         kill -15 $_processes
     fi
 
+    sleep 2
+
     _processes=$(lsof $newROOT 2>/dev/null | \
         sed "1d" | awk '{print $2}' | sort -u)
     if [ -n "$_processes" ]; then
