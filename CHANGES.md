@@ -1,5 +1,14 @@
 # Changes since latest release
 
+-   Use login shell with proper quoting
+
+    If a command with arguments is given, write those to a file, each argument
+    surrounded by single quotes to ensure proper variable quoting. Then call
+    this file with a login bash.
+
+    The login bash is necessary to source ~/.profile and other rc-files that
+    might define custom directories for the PATH variable.
+
 # Changes in 0.7.0
 
 # Changes in 0.6.2
