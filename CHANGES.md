@@ -1,3 +1,5 @@
+# Changes in 0.6.2
+
 # Changes in 0.6.1
 
 -   Create /var/run/utmp
