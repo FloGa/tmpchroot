@@ -44,6 +44,35 @@ useChroot() {
     )
 
     showTime() {
+        echo "Mounting filesystems ..."
+
+        mount -t proc iproc$envname $newROOT/proc
+        mount -t sysfs isys$envname $newROOT/sys
+        mount -t devtmpfs idev$envname $newROOT/dev
+
+        mount -t devpts -o newinstance,gid=5,mode=666,ptmxmode=666 \
+            idevpts$envname $newROOT/dev/pts
+        sync
+        rm -f $newROOT/dev/ptmx
+        ln -sf pts/ptmx $newROOT/dev/ptmx
+
+        mount -t tmpfs tmpfs $newROOT/dev/shm
+        mount -t tmpfs tmpfs $newROOT/run
+
+        touch $newROOT/var/run/utmp
+        chgrp utmp $newROOT/var/run/utmp
+        chmod 664 $newROOT/var/run/utmp
+
+        portagetmp_mopts="$( \
+            awk '$2 == "/var/tmp/portage" { print $4 }' /etc/fstab)"
+        [ -n "$portagetmp_mopts" ] && \
+            mount -t tmpfs -o $portagetmp_mopts tmpfs $newROOT/var/tmp/portage
+
+        echo "Starting SSH server ..."
+
+        # Only allow localhost to connect to localhost
+        cat /root/.ssh/id_rsa.pub >"$newROOT/root/.ssh/authorized_keys"
+
         # Search for an unused port
         read lowerPort upperPort < /proc/sys/net/ipv4/ip_local_port_range
         while :; do
@@ -54,27 +83,10 @@ useChroot() {
         done
         exec 9>&-
 
-        # Only allow localhost to connect to localhost
-        cat /root/.ssh/id_rsa.pub >"$newROOT/root/.ssh/authorized_keys"
+        chroot $newROOT sh -c " \
+            /usr/sbin/sshd -p $port"
 
         echo "Entering $newROOT ..."
-
-        chroot $newROOT sh -c " \
-            mount -t proc iproc$envname /proc; \
-            mount -t sysfs isys$envname /sys; \
-            mount -t devtmpfs idev$envname /dev; \
-            mount -t devpts -o newinstance,gid=5,mode=666,ptmxmode=666 \
-                idevpts$envname /dev/pts; \
-            sync; \
-            rm -f /dev/ptmx; \
-            ln -sf pts/ptmx /dev/ptmx; \
-            mount /var/tmp/portage; \
-            mount -t tmpfs tmpfs /dev/shm; \
-            mount -t tmpfs tmpfs /run; \
-            touch /var/run/utmp; \
-            chgrp utmp /var/run/utmp; \
-            chmod 664 /var/run/utmp; \
-            /usr/sbin/sshd -p $port"
 
         ssh -o UserKnownHostsFile=/dev/null \
             -o StrictHostKeyChecking=no \
@@ -142,6 +154,8 @@ tearDown() {
     if [ -n "$_processes" ]; then
         kill -15 $_processes
     fi
+
+    sleep 2
 
     _processes=$(lsof $newROOT 2>/dev/null | \
         sed "1d" | awk '{print $2}' | sort -u)
