@@ -11,6 +11,13 @@
 
 -   Remove deprecated nspawn support
 
+-   Add create-or-continue convenience command
+
+    Sometimes there are situations, where one wants to create a container,
+    maybe "pause" it for some time and then continue it. Now it is possible
+    with the same command. "create-or-continue" creates a new container if
+    not existent yet, and continues it otherwise.
+
 # Changes in 0.7.0
 
 -   Bind mount /usr/portage
