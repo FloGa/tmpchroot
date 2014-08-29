@@ -1,5 +1,15 @@
 # Changes since latest release
 
+# Changes in 0.6.2
+
+-   Mount filesystems outside of chroot
+
+    That is a lot faster than to do it inside the container.
+
+-   Wait a bit after terminating before killing tasks
+
+    Some tasks need their time to cleanly shut down after receiving SIGTERM.
+
 # Changes in 0.6.1
 
 -   Create /var/run/utmp
