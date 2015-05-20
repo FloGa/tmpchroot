@@ -133,11 +133,18 @@ createSnapshots() {
     mkdir -p $newROOT
 }
 
+mountIfFound() {
+    local volname="$1"
+    local mountpoint="$2"
+
+    if btrfs sub list $maint | grep "$volname" -q; then
+        mount -o subvol=$volname $device $newROOT/$mountpoint
+    fi
+}
+
 buildUp() {
     mount -o subvol=$newROOTname $device $newROOT
-    if btrfs sub list $maint | grep "$newHOMEname" -q; then
-        mount -o subvol=$newHOMEname $device $newROOT/home
-    fi
+    mountIfFound $newHOMEname /home
 
     echo "$envname" >"$newROOT/etc/debian_chroot"
 
@@ -186,6 +193,14 @@ tearDown() {
     fi
 }
 
+deleteSnapIfFound() {
+    local volname="$1"
+
+    if btrfs sub list $maint | grep "$volname" -q; then
+        btrfs sub del $maint/$volname
+    fi
+}
+
 removeSnapshots() {
     if [ "$_yes" = "42" ]; then
         remove="yes"
@@ -201,9 +216,7 @@ removeSnapshots() {
         rmdir $newROOT
 
         btrfs sub del $maint/$newROOTname
-        if btrfs sub list $maint | grep "$newHOMEname" -q; then
-            btrfs sub del $maint/$newHOMEname
-        fi
+        deleteSnapIfFound $newHOMEname
     fi
 }
 
