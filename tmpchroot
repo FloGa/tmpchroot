@@ -11,6 +11,11 @@ envdir=/mnt/btrfs/chroot
 subvolRoot=ROOT
 subvolHome=HOME
 
+subvolOpt=OPT
+subvolTmp=TMP
+subvolUsr=USR
+subvolVar=VAR
+
 # Comments to grep:
 # - \K is a look-behind, not included in result.
 # - (?=xxx) is a look-ahead, also not included.
@@ -22,6 +27,10 @@ device=$(btrfs dev stats "$maint" | head -n1 | \
 updateVariables() {
     newROOTname=${subvolRoot}-chroot-$envname
     newHOMEname=${subvolHome}-chroot-$envname
+    newOPTname=${subvolOpt}-chroot-$envname
+    newTMPname=${subvolTmp}-chroot-$envname
+    newUSRname=${subvolUsr}-chroot-$envname
+    newVARname=${subvolVar}-chroot-$envname
     newROOT=$envdir/$envname
 }
 
@@ -129,15 +138,38 @@ createSnapshots() {
     if [ "$_nohome" != 314 -a -d "$maint/$subvolHome" ]; then
         btrfs sub snap $maint/$subvolHome $maint/$newHOMEname
     fi
+    if [ -d "$maint/$subvolTmp" ]; then
+        btrfs sub snap $maint/$subvolTmp $maint/$newTMPname
+    fi
+    if [ -d "$maint/$subvolOpt" ]; then
+        btrfs sub snap $maint/$subvolOpt $maint/$newOPTname
+    fi
+    if [ -d "$maint/$subvolUsr" ]; then
+        btrfs sub snap $maint/$subvolUsr $maint/$newUSRname
+    fi
+    if [ -d "$maint/$subvolVar" ]; then
+        btrfs sub snap $maint/$subvolVar $maint/$newVARname
+    fi
 
     mkdir -p $newROOT
 }
 
+mountIfFound() {
+    local volname="$1"
+    local mountpoint="$2"
+
+    if btrfs sub list $maint | grep "$volname" -q; then
+        mount -o subvol=$volname $device $newROOT/$mountpoint
+    fi
+}
+
 buildUp() {
     mount -o subvol=$newROOTname $device $newROOT
-    if btrfs sub list $maint | grep "$newHOMEname" -q; then
-        mount -o subvol=$newHOMEname $device $newROOT/home
-    fi
+    mountIfFound $newHOMEname /home
+    mountIfFound $newOPTname /opt
+    mountIfFound $newTMPname /tmp
+    mountIfFound $newUSRname /usr
+    mountIfFound $newVARname /var
 
     echo "$envname" >"$newROOT/etc/debian_chroot"
 
@@ -186,6 +218,14 @@ tearDown() {
     fi
 }
 
+deleteSnapIfFound() {
+    local volname="$1"
+
+    if btrfs sub list $maint | grep "$volname" -q; then
+        btrfs sub del $maint/$volname
+    fi
+}
+
 removeSnapshots() {
     if [ "$_yes" = "42" ]; then
         remove="yes"
@@ -201,9 +241,11 @@ removeSnapshots() {
         rmdir $newROOT
 
         btrfs sub del $maint/$newROOTname
-        if btrfs sub list $maint | grep "$newHOMEname" -q; then
-            btrfs sub del $maint/$newHOMEname
-        fi
+        deleteSnapIfFound $newHOMEname
+        deleteSnapIfFound $newOPTname
+        deleteSnapIfFound $newTMPname
+        deleteSnapIfFound $newUSRname
+        deleteSnapIfFound $newVARname
     fi
 }
 
