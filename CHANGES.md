@@ -1,3 +1,5 @@
+# Changes in 0.7.0
+
 # Changes in 0.6.2
 
 -   Mount filesystems outside of chroot
