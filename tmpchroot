@@ -98,10 +98,20 @@ useChroot() {
 
         echo "Entering $newROOT ..."
 
+        local cmd=
+        if [ -n "$1" ]; then
+            local i
+            for i in "$@"; do
+                cmd="$cmd '$i'"
+            done
+            echo "$cmd" >$newROOT/tmpchroot_cmdline
+            cmd="bash -l /tmpchroot_cmdline"
+        fi
+
         ssh -o UserKnownHostsFile=/dev/null \
             -o StrictHostKeyChecking=no \
             -o LogLevel=quiet \
-            -p $port -t localhost "$@"
+            -p $port -t localhost "$cmd"
     }
 }
 
