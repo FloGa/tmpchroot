@@ -2,6 +2,18 @@
 
 # Changes in 0.7.0
 
+-   Bind mount /usr/portage
+
+    In some setups, /usr/portage is just a mount itself, means it won't be
+    snapshot along with /. The bind mount assures it is there no matter
+    what.
+
+-   Re-factor conditional mount and delete
+
+-   Add support for top level subvolumes
+
+-   Add bash completion
+
 # Changes in 0.6.2
 
 -   Mount filesystems outside of chroot
