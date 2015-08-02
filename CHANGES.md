@@ -9,6 +9,8 @@
     The login bash is necessary to source ~/.profile and other rc-files that
     might define custom directories for the PATH variable.
 
+-   Remove deprecated nspawn support
+
 # Changes in 0.7.0
 
 -   Bind mount /usr/portage

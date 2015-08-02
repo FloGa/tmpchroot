@@ -36,13 +36,7 @@ updateVariables() {
 
 prepare() {
     updateVariables
-
-    if [ "$_nspawn" = 314 ]; then
-        echo "INFO: systemd-nspawn is deprecated, please use chroot instead!"
-        useNspawn
-    else
-        useChroot
-    fi
+    useChroot
 }
 
 useChroot() {
@@ -112,23 +106,6 @@ useChroot() {
             -o StrictHostKeyChecking=no \
             -o LogLevel=quiet \
             -p $port -t localhost "$cmd"
-    }
-}
-
-# Deprecated. Will be deleted soon.
-useNspawn() {
-    bindmounts=(
-    /var/portage/distfiles
-    /var/portage/packages
-    /var/tmp/ccache
-    /var/tmp/portage
-    /var/tmp/portage_notmpfs
-    )
-
-    showTime() {
-        echo "Entering $newROOT ..."
-        systemd-nspawn --link-journal=no -D $newROOT "$@"
-        deblock
     }
 }
 
@@ -301,9 +278,6 @@ while [ $# -gt 0 ]; do
         --subvol-home)
             subvolHome="$1"
             shift
-            ;;
-        --nspawn)
-            _nspawn=314
             ;;
         --nohome)
             _nohome=314

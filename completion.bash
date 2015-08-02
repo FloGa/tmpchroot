@@ -6,7 +6,7 @@ _tmpchroot() {
 
     local cmds opts
     cmds="list create continue delete test"
-    opts="-y -n --subvol-root --subvol-home --nspawn --nohome"
+    opts="-y -n --subvol-root --subvol-home --nohome"
 
     if [[ "${words[*]}" = *" -- "* ]]; then
         local i
