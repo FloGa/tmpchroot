@@ -18,6 +18,11 @@
     with the same command. "create-or-continue" creates a new container if
     not existent yet, and continues it otherwise.
 
+-   Add layman folder to bind mounts
+
+    Since the layman folder is quite as essential to the system as the
+    portage tree, add it to the bind mounts.
+
 # Changes in 0.7.0
 
 -   Bind mount /usr/portage
