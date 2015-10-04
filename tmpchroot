@@ -248,7 +248,7 @@ while [ $# -gt 0 ]; do
         list | test)
             action="$key"
             ;;
-        create | continue)
+        create | continue | create-or-continue)
             action="$key"
             envname="$1"
             shift
@@ -338,6 +338,25 @@ case "$action" in
                 tearDown
                 removeSnapshots
             fi
+        fi
+        ;;
+    create-or-continue)
+        if [ -z "$envname" ]; then
+            echo "Please name an environment!"
+        else
+            prepare
+            if [ -d "$newROOT" ]; then
+                echo "There already is an environment \"$envname\"."
+                echo "Will continue this one."
+            else
+                echo "There is no environment \"$envname\"."
+                echo "Will create it."
+                createSnapshots
+            fi
+            buildUp
+            showTime "$@"
+            tearDown
+            removeSnapshots
         fi
         ;;
     delete)
