@@ -36,18 +36,13 @@ updateVariables() {
 
 prepare() {
     updateVariables
-
-    if [ "$_nspawn" = 314 ]; then
-        echo "INFO: systemd-nspawn is deprecated, please use chroot instead!"
-        useNspawn
-    else
-        useChroot
-    fi
+    useChroot
 }
 
 useChroot() {
     bindmounts=(
     /usr/portage
+    /var/lib/layman
     /var/portage/distfiles
     /var/portage/packages
     /var/tmp/ccache
@@ -98,27 +93,20 @@ useChroot() {
 
         echo "Entering $newROOT ..."
 
+        local cmd=
+        if [ -n "$1" ]; then
+            local i
+            for i in "$@"; do
+                cmd="$cmd '$i'"
+            done
+            echo "$cmd" >$newROOT/tmpchroot_cmdline
+            cmd="bash -l /tmpchroot_cmdline"
+        fi
+
         ssh -o UserKnownHostsFile=/dev/null \
             -o StrictHostKeyChecking=no \
             -o LogLevel=quiet \
-            -p $port -t localhost "$@"
-    }
-}
-
-# Deprecated. Will be deleted soon.
-useNspawn() {
-    bindmounts=(
-    /var/portage/distfiles
-    /var/portage/packages
-    /var/tmp/ccache
-    /var/tmp/portage
-    /var/tmp/portage_notmpfs
-    )
-
-    showTime() {
-        echo "Entering $newROOT ..."
-        systemd-nspawn --link-journal=no -D $newROOT "$@"
-        deblock
+            -p $port -t localhost "$cmd"
     }
 }
 
@@ -261,7 +249,7 @@ while [ $# -gt 0 ]; do
         list | test)
             action="$key"
             ;;
-        create | continue)
+        create | continue | create-or-continue)
             action="$key"
             envname="$1"
             shift
@@ -291,9 +279,6 @@ while [ $# -gt 0 ]; do
         --subvol-home)
             subvolHome="$1"
             shift
-            ;;
-        --nspawn)
-            _nspawn=314
             ;;
         --nohome)
             _nohome=314
@@ -354,6 +339,25 @@ case "$action" in
                 tearDown
                 removeSnapshots
             fi
+        fi
+        ;;
+    create-or-continue)
+        if [ -z "$envname" ]; then
+            echo "Please name an environment!"
+        else
+            prepare
+            if [ -d "$newROOT" ]; then
+                echo "There already is an environment \"$envname\"."
+                echo "Will continue this one."
+            else
+                echo "There is no environment \"$envname\"."
+                echo "Will create it."
+                createSnapshots
+            fi
+            buildUp
+            showTime "$@"
+            tearDown
+            removeSnapshots
         fi
         ;;
     delete)

@@ -1,4 +1,41 @@
+# Changes in 0.8.0
+
+-   Use login shell with proper quoting
+
+    If a command with arguments is given, write those to a file, each
+    argument surrounded by single quotes to ensure proper variable quoting.
+    Then call this file with a login bash.
+
+    The login bash is necessary to source ~/.profile and other rc-files that
+    might define custom directories for the PATH variable.
+
+-   Remove deprecated nspawn support
+
+-   Add create-or-continue convenience command
+
+    Sometimes there are situations, where one wants to create a container,
+    maybe "pause" it for some time and then continue it. Now it is possible
+    with the same command. "create-or-continue" creates a new container if
+    not existent yet, and continues it otherwise.
+
+-   Add layman folder to bind mounts
+
+    Since the layman folder is quite as essential to the system as the
+    portage tree, add it to the bind mounts.
+
 # Changes in 0.7.0
+
+-   Bind mount /usr/portage
+
+    In some setups, /usr/portage is just a mount itself, means it won't be
+    snapshot along with /. The bind mount assures it is there no matter
+    what.
+
+-   Re-factor conditional mount and delete
+
+-   Add support for top level subvolumes
+
+-   Add bash completion
 
 # Changes in 0.6.2
 
@@ -22,16 +59,16 @@
     The delay between finding an unused port and starting the ssh server may
     cause multiple servers using the same port.
 
-    Now, on each iteration a random port is picked and tested until a free one
-    is found.
+    Now, on each iteration a random port is picked and tested until a free
+    one is found.
 
 # Changes in 0.6.0
 
 -   Force creation of symlink in case rm fails
 
-    If mounting of /dev takes longer then execution of rm, then a warning like
-    "symlink already exists" may appear. The -f flag of ln takes care of that
-    and tries to delete the file once more.
+    If mounting of /dev takes longer then execution of rm, then a warning
+    like "symlink already exists" may appear. The -f flag of ln takes care
+    of that and tries to delete the file once more.
 
 -   Add deprecation comment for nspawn
 
@@ -75,9 +112,9 @@
 
 -   Sync after unmounting
 
-    Sometimes the unmounting happens not immediately, as in it is not written
-    to disk but just in the memory. That leads to errors when trying to delete
-    the unmounted directory, since it since not to be empty.
+    Sometimes the unmounting happens not immediately, as in it is not
+    written to disk but just in the memory. That leads to errors when trying
+    to delete the unmounted directory, since it since not to be empty.
 
     Syncing ensures that the unmounting finished completely.
 
@@ -89,9 +126,9 @@
 
 -   Use SSH to connect to container
 
-    There are many problems with using terminals directly in the chroot shell.
-    It is generally more flexible to start a local sshd server inside the
-    container and connect with ssh client.
+    There are many problems with using terminals directly in the chroot
+    shell. It is generally more flexible to start a local sshd server inside
+    the container and connect with ssh client.
 
 -   Create new mounts to kernel file systems
 
@@ -124,8 +161,8 @@
 
 -   Fix yet another bug with mounting home
 
-    Instead of reading variables, that may or may not be correctly set, I now
-    check whether the home snapshot is listed as a subvolume.
+    Instead of reading variables, that may or may not be correctly set, I
+    now check whether the home snapshot is listed as a subvolume.
 
 # Changes in 0.3.2
 
@@ -155,8 +192,8 @@
 
 -   Reduce number of bind mounts
 
-    Some of the mounts tear open holes to the actual system. To prevent that,
-    I removed some of them.
+    Some of the mounts tear open holes to the actual system. To prevent
+    that, I removed some of them.
 
 -   Add -m flag to realpath
 
@@ -203,8 +240,8 @@
 
 -   Deprecate nspawn support
 
-    Due to a update, systemd-nspawn seems to have stopped working. Therefore I
-    decided to not longer depend on systemd but instead optimize good old
+    Due to a update, systemd-nspawn seems to have stopped working. Therefore
+    I decided to not longer depend on systemd but instead optimize good old
     chroot.
 
 

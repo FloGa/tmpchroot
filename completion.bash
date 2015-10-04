@@ -5,8 +5,8 @@ _tmpchroot() {
     _init_completion || return
 
     local cmds opts
-    cmds="list create continue delete test"
-    opts="-y -n --subvol-root --subvol-home --nspawn --nohome"
+    cmds="list create continue create-or-continue delete test"
+    opts="-y -n --subvol-root --subvol-home --nohome"
 
     if [[ "${words[*]}" = *" -- "* ]]; then
         local i
@@ -24,7 +24,7 @@ _tmpchroot() {
             list | create | test)
                 return 0
                 ;;
-            continue)
+            continue | create-or-continue)
                 if [ $(($cword - $c)) = 1 ]; then
                     completions="$(ls /mnt/btrfs/chroot)"
                 else
