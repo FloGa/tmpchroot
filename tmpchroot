@@ -42,6 +42,7 @@ prepare() {
 useChroot() {
     bindmounts=(
     /usr/portage
+    /var/lib/layman
     /var/portage/distfiles
     /var/portage/packages
     /var/tmp/ccache
