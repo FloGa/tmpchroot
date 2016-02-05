@@ -228,7 +228,7 @@ removeSnapshots() {
     else
         rmdir $newROOT
 
-        btrfs sub del $maint/$newROOTname
+        deleteSnapIfFound $newROOTname
         deleteSnapIfFound $newHOMEname
         deleteSnapIfFound $newOPTname
         deleteSnapIfFound $newTMPname
