@@ -1,3 +1,20 @@
+# Changes in 0.9.0
+
+-   Use subroutine to delete ROOT snapshot
+
+    Avoids duplication of removal logic.
+
+-   Use recursive snapshots
+
+    This expects one of my other scripts, btrfs-recursive-snapshot to be in
+    the PATH.
+
+-   Introduce config file
+
+    This is a quick fix for when the default values of $maint and $envdir
+    are not correct on the current system. Therefore, those two variables
+    can be pre-defined in a user config file, namely /etc/tmpchroot.conf.
+
 # Changes in 0.8.0
 
 -   Use login shell with proper quoting

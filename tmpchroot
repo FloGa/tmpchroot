@@ -5,8 +5,12 @@ if [ "$UID" != 0 ]; then
     exit 1
 fi
 
-maint=/mnt/btrfs/maint
-envdir=/mnt/btrfs/chroot
+if [ -r /etc/tmpchroot.conf ]; then
+    source /etc/tmpchroot.conf
+fi
+
+maint="${maint:-/mnt/btrfs/maint}"
+envdir="${envdir:-/mnt/btrfs/chroot}"
 
 subvolRoot=ROOT
 subvolHome=HOME
@@ -19,7 +23,7 @@ subvolVar=VAR
 # Comments to grep:
 # - \K is a look-behind, not included in result.
 # - (?=xxx) is a look-ahead, also not included.
-# To sum it up: I get the string inside the brackets, which wil be the device
+# To sum it up: I get the string inside the brackets, which will be the device
 # path.
 device=$(btrfs dev stats "$maint" | head -n1 | \
     grep -Po "\[\K.+(?=\])")
@@ -122,21 +126,21 @@ createSnapshots() {
         exit 1
     fi
 
-    btrfs sub snap $maint/$subvolRoot $maint/$newROOTname
+    btrfs-recursive-snapshot $maint/$subvolRoot $maint/$newROOTname
     if [ "$_nohome" != 314 -a -d "$maint/$subvolHome" ]; then
-        btrfs sub snap $maint/$subvolHome $maint/$newHOMEname
+        btrfs-recursive-snapshot $maint/$subvolHome $maint/$newHOMEname
     fi
     if [ -d "$maint/$subvolTmp" ]; then
-        btrfs sub snap $maint/$subvolTmp $maint/$newTMPname
+        btrfs-recursive-snapshot $maint/$subvolTmp $maint/$newTMPname
     fi
     if [ -d "$maint/$subvolOpt" ]; then
-        btrfs sub snap $maint/$subvolOpt $maint/$newOPTname
+        btrfs-recursive-snapshot $maint/$subvolOpt $maint/$newOPTname
     fi
     if [ -d "$maint/$subvolUsr" ]; then
-        btrfs sub snap $maint/$subvolUsr $maint/$newUSRname
+        btrfs-recursive-snapshot $maint/$subvolUsr $maint/$newUSRname
     fi
     if [ -d "$maint/$subvolVar" ]; then
-        btrfs sub snap $maint/$subvolVar $maint/$newVARname
+        btrfs-recursive-snapshot $maint/$subvolVar $maint/$newVARname
     fi
 
     mkdir -p $newROOT
@@ -210,7 +214,7 @@ deleteSnapIfFound() {
     local volname="$1"
 
     if btrfs sub list $maint | grep "$volname" -q; then
-        btrfs sub del $maint/$volname
+        btrfs-recursive-snapshot -d $maint/$volname
     fi
 }
 
@@ -228,7 +232,7 @@ removeSnapshots() {
     else
         rmdir $newROOT
 
-        btrfs sub del $maint/$newROOTname
+        deleteSnapIfFound $newROOTname
         deleteSnapIfFound $newHOMEname
         deleteSnapIfFound $newOPTname
         deleteSnapIfFound $newTMPname
