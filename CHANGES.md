@@ -1,5 +1,14 @@
 # Changes since latest release
 
+-   Use subroutine to delete ROOT snapshot
+
+    Avoids duplication of removal logic.
+
+-   Use recursive snapshots
+
+    This expects one of my other scripts, btrfs-recursive-snapshot to be in
+    the PATH.
+
 -   Introduce config file
 
     This is a quick fix for when the default values of $maint and $envdir
