@@ -5,8 +5,12 @@ if [ "$UID" != 0 ]; then
     exit 1
 fi
 
-maint=/mnt/btrfs/maint
-envdir=/mnt/btrfs/chroot
+if [ -r /etc/tmpchroot.conf ]; then
+    source /etc/tmpchroot.conf
+fi
+
+maint="${maint:-/mnt/btrfs/maint}"
+envdir="${envdir:-/mnt/btrfs/chroot}"
 
 subvolRoot=ROOT
 subvolHome=HOME
