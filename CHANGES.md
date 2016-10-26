@@ -1,3 +1,5 @@
+# Changes since latest release
+
 # Changes in 0.9.0
 
 -   Use subroutine to delete ROOT snapshot
