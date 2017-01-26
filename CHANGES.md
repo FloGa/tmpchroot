@@ -1,5 +1,11 @@
 # Changes in 0.9.1
 
+    Try to re-create bindmount targets
+
+    The bindmounts can fail if some other file -- a symlink for example --
+    already exists in their destination. Try to delete that file and create
+    a directory before mounting.
+
 # Changes in 0.9.0
 
 -   Use subroutine to delete ROOT snapshot
