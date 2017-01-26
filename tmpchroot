@@ -116,6 +116,8 @@ useChroot() {
 
 mountbinds() {
     for i in ${bindmounts[@]}; do
+        rm -f "$newROOT/$i" 2>/dev/null
+        mkdir -p "$newROOT/$i"
         mount --bind "$i" "$newROOT/$i"
     done
 }
