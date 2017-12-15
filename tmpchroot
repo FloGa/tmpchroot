@@ -28,6 +28,10 @@ subvolVar=VAR
 device=$(btrfs dev stats "$maint" | head -n1 | \
     grep -Po "\[\K.+(?=\])")
 
+callIfDefined() {
+    declare -f "$1" >/dev/null 2>&1 && "$@"
+}
+
 updateVariables() {
     newROOTname=${subvolRoot}-chroot-$envname
     newHOMEname=${subvolHome}-chroot-$envname
@@ -94,6 +98,8 @@ useChroot() {
 
         chroot $newROOT sh -c " \
             /usr/sbin/sshd -p $port"
+
+        callIfDefined preEnter
 
         echo "Entering $newROOT ..."
 
