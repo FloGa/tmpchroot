@@ -1,3 +1,5 @@
+# Changes since latest release
+
 # Changes in 0.10.0
 
 -   Add support for a hook function before chrooting
