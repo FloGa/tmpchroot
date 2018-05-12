@@ -1,8 +1,13 @@
-# Changes since latest release
+# Changes in 0.10.0
+
+-   Add support for a hook function before chrooting
+
+    If the function preEnter is defined in /etc/tmpchroot.conf, then it will
+    be called right before entering the new environment.
 
 # Changes in 0.9.1
 
-    Try to re-create bindmount targets
+-   Try to re-create bindmount targets
 
     The bindmounts can fail if some other file -- a symlink for example --
     already exists in their destination. Try to delete that file and create
