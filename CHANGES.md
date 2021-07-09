@@ -1,3 +1,5 @@
+# Changes since latest release
+
 # Changes in 0.11.0
 
 -   Just use root volume
