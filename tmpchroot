@@ -123,7 +123,21 @@ createSnapshots() {
         exit 1
     fi
 
-    btrfs-recursive-snapshot $maint/$subvolRoot $maint/$newROOTname
+    local cmd=(
+        btrfs-recursive-snapshot
+    )
+
+    local exclude
+    for exclude in "${snapshot_excludes[@]}"; do
+        cmd+=(--exclude "$exclude")
+    done
+
+    cmd+=(
+        $maint/$subvolRoot
+        $maint/$newROOTname
+    )
+
+    "${cmd[@]}"
 
     mkdir -p $newROOT
 }
