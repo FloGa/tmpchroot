@@ -1,3 +1,28 @@
+# Changes in 0.11.0
+
+-   Just use root volume
+
+    Before, we assumed a strange subvolume layout, that will most certainly
+    not match the general spirit. Hence, we now use just the root subvolume.
+    If more complex operations are needed, there is always the possibility
+    of defining an own preEnter method in the config file.
+
+-   Support snapshot excludes
+
+    The config file now supports defining a `snapshot_excludes` Bash array
+    which contains Bash globs of subvolumes that should not be snapshotted
+    into the new temporary environment.
+
+    This can be helpful for example if you have Docker installed on the same
+    partition and do not want to snapshot every single Docker subvolume into
+    your new environment. You can define the following in your
+    `/etc/tmpchroot.conf` (adjust path name to your system if necessary):
+
+        snapshot_excludes=(
+           /var/lib/docker/btrfs/subvolumes
+           /home/*/private
+       )
+
 # Changes in 0.10.0
 
 -   Add support for a hook function before chrooting

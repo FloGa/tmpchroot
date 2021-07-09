@@ -13,12 +13,6 @@ maint="${maint:-/mnt/btrfs/maint}"
 envdir="${envdir:-/mnt/btrfs/chroot}"
 
 subvolRoot=ROOT
-subvolHome=HOME
-
-subvolOpt=OPT
-subvolTmp=TMP
-subvolUsr=USR
-subvolVar=VAR
 
 # Comments to grep:
 # - \K is a look-behind, not included in result.
@@ -34,11 +28,6 @@ callIfDefined() {
 
 updateVariables() {
     newROOTname=${subvolRoot}-chroot-$envname
-    newHOMEname=${subvolHome}-chroot-$envname
-    newOPTname=${subvolOpt}-chroot-$envname
-    newTMPname=${subvolTmp}-chroot-$envname
-    newUSRname=${subvolUsr}-chroot-$envname
-    newVARname=${subvolVar}-chroot-$envname
     newROOT=$envdir/$envname
 }
 
@@ -134,22 +123,21 @@ createSnapshots() {
         exit 1
     fi
 
-    btrfs-recursive-snapshot $maint/$subvolRoot $maint/$newROOTname
-    if [ "$_nohome" != 314 -a -d "$maint/$subvolHome" ]; then
-        btrfs-recursive-snapshot $maint/$subvolHome $maint/$newHOMEname
-    fi
-    if [ -d "$maint/$subvolTmp" ]; then
-        btrfs-recursive-snapshot $maint/$subvolTmp $maint/$newTMPname
-    fi
-    if [ -d "$maint/$subvolOpt" ]; then
-        btrfs-recursive-snapshot $maint/$subvolOpt $maint/$newOPTname
-    fi
-    if [ -d "$maint/$subvolUsr" ]; then
-        btrfs-recursive-snapshot $maint/$subvolUsr $maint/$newUSRname
-    fi
-    if [ -d "$maint/$subvolVar" ]; then
-        btrfs-recursive-snapshot $maint/$subvolVar $maint/$newVARname
-    fi
+    local cmd=(
+        btrfs-recursive-snapshot
+    )
+
+    local exclude
+    for exclude in "${snapshot_excludes[@]}"; do
+        cmd+=(--exclude "$exclude")
+    done
+
+    cmd+=(
+        $maint/$subvolRoot
+        $maint/$newROOTname
+    )
+
+    "${cmd[@]}"
 
     mkdir -p $newROOT
 }
@@ -165,11 +153,6 @@ mountIfFound() {
 
 buildUp() {
     mount -o subvol=$newROOTname $device $newROOT
-    mountIfFound $newHOMEname /home
-    mountIfFound $newOPTname /opt
-    mountIfFound $newTMPname /tmp
-    mountIfFound $newUSRname /usr
-    mountIfFound $newVARname /var
 
     echo "$envname" >"$newROOT/etc/debian_chroot"
 
@@ -236,11 +219,6 @@ removeSnapshots() {
         rmdir $newROOT
 
         deleteSnapIfFound $newROOTname
-        deleteSnapIfFound $newHOMEname
-        deleteSnapIfFound $newOPTname
-        deleteSnapIfFound $newTMPname
-        deleteSnapIfFound $newUSRname
-        deleteSnapIfFound $newVARname
     fi
 }
 
@@ -282,13 +260,6 @@ while [ $# -gt 0 ]; do
         --subvol-root)
             subvolRoot="$1"
             shift
-            ;;
-        --subvol-home)
-            subvolHome="$1"
-            shift
-            ;;
-        --nohome)
-            _nohome=314
             ;;
         --)
             break
