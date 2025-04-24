@@ -1,3 +1,5 @@
+# Changes since latest release
+
 # Changes in 0.12.0
 
 -   Use matching identity file to connect
