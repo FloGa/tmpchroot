@@ -1,5 +1,10 @@
 # Changes in 0.12.0
 
+-   Use matching identity file to connect
+
+    We are adding a public identity key to the authorized_keys file, so use
+    the matching private key file to connect to the server.
+
 # Changes in 0.11.0
 
 -   Just use root volume
