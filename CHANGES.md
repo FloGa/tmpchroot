@@ -1,4 +1,4 @@
-# Changes since latest release
+# Changes in 0.12.0
 
 # Changes in 0.11.0
 
