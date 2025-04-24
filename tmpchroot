@@ -105,6 +105,7 @@ useChroot() {
         ssh -o UserKnownHostsFile=/dev/null \
             -o StrictHostKeyChecking=no \
             -o LogLevel=quiet \
+            -i /root/.ssh/id_rsa \
             -p $port -t localhost "$cmd"
     }
 }
